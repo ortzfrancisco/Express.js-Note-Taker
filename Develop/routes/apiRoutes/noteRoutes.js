@@ -1,21 +1,24 @@
 const router = require("express").Router();
-let data = require("../../db/db.json");
+// got this from the site https://www.npmjs.com/package/uuid
 const { v4: uuidv4 } = require("uuid");
 const fs = require("fs");
 const path = require("path");
+let data = require("../../db/db.json");
 
-// GET /api/notes
+// route to get notes
 router.get("/notes", (req, res) => {
-  console.log({ data });
   res.json(data);
 });
 
-// DELETE /api/notes/:id
-// get one specific note, req.body.id, readfile db.json, find entry that matches that id
-router.delete("/notes/:id", (req, res) => {
-  // rewrite data and return only elements that DON'T match deleted note ID
-  data = data.filter((el) => el.id !== req.params.id);
+// route to post notes
+router.post("/notes", (req, res) => {
+
+  const newNote = { ...req.body, id: uuidv4() };
+
+  // push the new note to the data array in the db.json file
+  data.push(newNote);
   fs.writeFile(
+    // join the directory name with the db.json file
     path.join(__dirname, "../../db/db.json"),
     JSON.stringify(data),
     function (err) {
@@ -27,15 +30,11 @@ router.delete("/notes/:id", (req, res) => {
   );
 });
 
-// POST /api/notes
-//   create new UUID, take note out of req.body, apply UUID, save to db.json
-router.post("/notes", (req, res) => {
-  // spread operator
-  const newNote = { ...req.body, id: uuidv4() };
-  console.log(newNote);
-  console.log(req.body);
-  data.unshift(newNote);
-  // joins relative to absolute path
+// route to delete notes by id
+router.delete("/notes/:id", (req, res) => {
+  // filter out the note with the id that was passed in the url
+  data = data.filter((note) => note.id !== req.params.id);
+  // Write the updated data array to db.json file
   fs.writeFile(
     path.join(__dirname, "../../db/db.json"),
     JSON.stringify(data),
